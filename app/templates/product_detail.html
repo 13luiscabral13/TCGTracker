@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ product.name }} | TCG Tracker</title>
+    <style>
+      :root {
+        --bg: #07111f;
+        --panel: rgba(15, 23, 42, 0.9);
+        --text: #e2e8f0;
+        --muted: #a5b4cf;
+        --accent: #8b5cf6;
+        --accent-2: #22c55e;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: linear-gradient(145deg, #020817, #111827 40%, #0f172a);
+        color: var(--text);
+      }
+      .page {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 32px 20px 56px;
+      }
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+      }
+      h1 { margin: 0; font-size: 2.2rem; }
+      .subhead { color: var(--muted); margin-top: 0.4rem; }
+      .card {
+        background: var(--panel);
+        border: 1px solid rgba(148,163,184,0.15);
+        border-radius: 18px;
+        padding: 1.25rem;
+        box-shadow: 0 18px 40px rgba(0,0,0,0.18);
+      }
+      .hero {
+        display: grid; grid-template-columns: minmax(220px, 300px) 1fr; gap: 1.5rem;
+      }
+      .hero img {
+        width: 100%; border-radius: 14px; background: #0f172a; border: 1px solid rgba(148,163,184,0.15);
+      }
+      .meta {
+        display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem;
+      }
+      .pill {
+        display: inline-block; background: rgba(139, 92, 246, 0.18); color: #ddd6fe; border: 1px solid rgba(196,181,253,0.25);
+        border-radius: 999px; padding: 0.45rem 0.8rem; font-size: 0.85rem;
+      }
+      .price-table {
+        width: 100%; border-collapse: collapse; margin-top: 1.25rem;
+      }
+      .price-table th, .price-table td {
+        border-bottom: 1px solid rgba(148,163,184,0.15); padding: 0.8rem 0.5rem; text-align: left;
+      }
+      .price-table th { color: var(--muted); }
+      .chip {
+        display: inline-block; background: rgba(34,197,94,0.16); color: #bbf7d0; padding: 0.2rem 0.5rem; border-radius: 999px; font-size: 0.8rem;
+      }
+      .chip.warning {
+        background: rgba(245,158,11,0.14); color: #fcd34d;
+      }
+      a {
+        color: #c4b5fd;
+      }
+      .empty {
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="topbar">
+        <div>
+          <h1>{{ product.name }}</h1>
+          <div class="subhead">Portuguese store comparison</div>
+        </div>
+        <a href="/" style="color: var(--text); text-decoration: none;">← Back to dashboard</a>
+      </div>
+
+      <div class="card hero">
+        <img src="{{ product.image_url or 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=600&q=80' }}" alt="{{ product.name }}" />
+        <div>
+          <div class="meta">
+            {% if product.set_name %}<span class="pill">{{ product.set_name }}</span>{% endif %}
+            {% if product.card_number %}<span class="pill">Code: {{ product.card_number }}</span>{% endif %}
+          </div>
+          <div style="margin-top: 1.25rem; color: var(--muted);">
+            {% set priced_stores = comparison.stores | selectattr('last_seen_price') | list %}
+            {% if priced_stores %}
+              Lowest price: <strong style="color: var(--text);">
+                {% set lowest = priced_stores | map(attribute='last_seen_price') | list | min %}
+                €{{ '%.2f'|format(lowest) }}
+              </strong>
+            {% else %}
+              No tracked prices yet.
+            {% endif %}
+          </div>
+          <table class="price-table">
+            <thead>
+              <tr>
+                <th>Store</th>
+                <th>Price</th>
+                <th>Status</th>
+                <th>Link</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for store in comparison.stores %}
+                <tr>
+                  <td>{{ store.store_name }}</td>
+                  <td>
+                    {% if store.in_stock is false %}
+                      <span class="empty">✕</span>
+                    {% elif store.last_seen_price is not none %}
+                      €{{ '%.2f'|format(store.last_seen_price) }}
+                    {% else %}
+                      <span class="empty">No price</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if store.in_stock is false %}
+                      <span class="chip warning" style="background: rgba(239,68,68,0.15); color: #fca5a5;">✕ Out of stock</span>
+                    {% elif store.last_seen_promo %}
+                      <span class="chip">Promo</span>
+                    {% else %}
+                      <span class="chip warning">Normal</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if store.product_url %}
+                      <a href="{{ store.product_url }}" target="_blank" rel="noopener noreferrer">Open</a>
+                    {% else %}
+                      <span class="empty">—</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% else %}
+                <tr>
+                  <td colspan="4" class="empty">No store data available for this product yet.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
